@@ -36,6 +36,7 @@
 #include "common.h"
 #include "disp.h"
 #include "error.h"
+#include "helper.h"
 #include "task_network.h"
 
 // Definitions and configurations for SPI accesses microSD memory
@@ -95,6 +96,8 @@ void loop()
 		if(iLastSeconds!=xCurrentDateTime.time.seconds)
 		{
 			disp_dateTime(xCurrentDateTime);
+
+			update_statusWiFi();
 
 			iLastSeconds=xCurrentDateTime.time.seconds;
 		}
