@@ -32,6 +32,7 @@
 #include <M5Unified.h>
 #include <SD.h>
 
+#include "appconf.h"
 #include "common.h"
 #include "disp.h"
 #include "error.h"
@@ -68,6 +69,13 @@ void setup()
 		return;
 	}
 	disp_symbolMemory(symbol::TwoState::OK);
+
+	if(appConf_load())
+	{
+		//task_network::initializeTask();
+	}
+
+	//task_adc::initializeTask();
 }
 
 void loop()
