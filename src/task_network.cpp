@@ -140,6 +140,10 @@ namespace task_network
 		WiFi.softAPdisconnect(true);
 		WiFi.mode(WIFI_STA);
 
+		vTaskDelay(pdMS_TO_TICKS(100));
+		WiFi.begin(xAppConf.cWifiSsid,xAppConf.cWifiPass);
+		vTaskDelay(pdMS_TO_TICKS(100));
+
 		xTaskCreatePinnedToCore(vTaskMain,"Task_Network",4096,NULL,1,NULL,0);
 	}
 }
