@@ -5,6 +5,7 @@
 #include "common.h"
 #include "disp.h"
 #include "error.h"
+#include "task_adc.h"
 
 static void disp_graphFrame(LovyanGFX& xDispTo,int32_t iOffsetX,int32_t iOffsetY)
 {
@@ -132,6 +133,21 @@ void disp_dateTime(const m5::rtc_datetime_t& xDateTime)
 	}
 }
 
+void disp_currentResult(const struct task_adc::Result& xResult)
+{
+	if(xResult.fAdaptiveOffset<common::NORMAL_ADC_OFFSET_MIN ||
+	   xResult.fAdaptiveOffset>common::NORMAL_ADC_OFFSET_MAX)
+	{
+		disp_symbolVolt(symbol::ThreeState::Unknown);
+	}
+	else disp_symbolVolt(symbol::ThreeState::OK);
+
+	M5.Display.setTextSize(4);
+	M5.Display.setTextColor(WHITE,NAVY);
+	M5.Display.setCursor(210,62);
+	M5.Display.printf("%3u",xResult.ucVoltRMS);
+}
+
 void disp_initial(void)
 {
 	M5.Display.clear();
@@ -148,8 +164,8 @@ void disp_initial(void)
 	disp_dateTime({{-1,-1,-1},{-1,-1,-1}});
 
 	M5.Display.setTextSize(4);
-	M5.Display.setCursor(156,62);
 	M5.Display.setTextColor(WHITE,NAVY);
+	M5.Display.setCursor(156,62);
 	M5.Display.print("AC");
 	M5.Display.setCursor(210,62);
 	M5.Display.print("---");

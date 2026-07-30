@@ -12,6 +12,12 @@ namespace common
 
 	static constexpr const char* LOCAL_TIMEZONE="JST-9";
 	static constexpr const char* LOCAL_HOSTNAME="volt";
+
+	static constexpr float NORMAL_VDD_MILLIVOLT=3300.0F;
+	static constexpr float NORMAL_ADC_OFFSET_MIN=NORMAL_VDD_MILLIVOLT*0.9F*0.4F;
+	static constexpr float NORMAL_ADC_OFFSET_MAX=NORMAL_VDD_MILLIVOLT*1.1F*0.6F;
+
+	static constexpr unsigned char ADC_VOLT_VALID_FROM=10U;
 }
 
 #endif // #COMMON_H DISP_H

@@ -85,6 +85,7 @@ void loop()
 {
 	static int8_t iLastSeconds=-1;
 	m5::rtc_datetime_t xCurrentDateTime;
+	struct task_adc::Result xResult;
 
 	if(!error_handle())
 	{
@@ -97,8 +98,11 @@ void loop()
 		if(iLastSeconds!=xCurrentDateTime.time.seconds)
 		{
 			disp_dateTime(xCurrentDateTime);
-
 			update_statusWiFi();
+
+			task_adc::getResult(&xResult);
+			if(xResult.ucVoltRMS<common::ADC_VOLT_VALID_FROM) xResult.ucVoltRMS=0U;
+			disp_currentResult(xResult);
 
 			iLastSeconds=xCurrentDateTime.time.seconds;
 		}
