@@ -87,9 +87,6 @@ void loop()
 	m5::rtc_datetime_t xCurrentDateTime;
 	struct task_adc::Result xResult;
 
-	constexpr uint8_t ADDR_AXP192_INPOWSTAT=0U;
-	constexpr uint8_t VAL_AXP192_INPOWSTAT_ACIN_AVAIL=0x40U;
-
 	if(!error_handle())
 	{
 		if(task_network::bFatal)
@@ -106,12 +103,7 @@ void loop()
 
 			disp_dateTime(xCurrentDateTime);
 			update_statusWiFi();
-
-			if(M5.Power.Axp192.readRegister8(ADDR_AXP192_INPOWSTAT) & VAL_AXP192_INPOWSTAT_ACIN_AVAIL)
-			{
-				disp_symbolPower(symbol::TwoState::OK);
-			}
-			else disp_symbolPower(symbol::TwoState::NG);
+			update_statusPower();
 
 			iLastSeconds=xCurrentDateTime.time.seconds;
 		}

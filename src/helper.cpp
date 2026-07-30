@@ -21,3 +21,15 @@ void update_statusWiFi(void)
 
 	if(task_network::bFatal) error_rise(error::RiseType::WiFiConnectionFailure);
 }
+
+void update_statusPower(void)
+{
+	constexpr uint8_t ADDR_AXP192_INPOWSTAT=0U;
+	constexpr uint8_t VAL_AXP192_INPOWSTAT_ACIN_AVAIL=0x40U;
+
+	if(M5.Power.Axp192.readRegister8(ADDR_AXP192_INPOWSTAT) & VAL_AXP192_INPOWSTAT_ACIN_AVAIL)
+	{
+		disp_symbolPower(symbol::TwoState::OK);
+	}
+	else disp_symbolPower(symbol::TwoState::NG);
+}
