@@ -73,7 +73,7 @@ void setup()
 
 	if(appConf_load())
 	{
-		//task_network::initializeTask();
+		task_network::initializeTask();
 	}
 
 	//task_adc::initializeTask();
@@ -86,6 +86,11 @@ void loop()
 
 	if(!error_handle())
 	{
+		if(task_network::bFatal)
+		{
+			error_rise(error::RiseType::WiFiConnectionFailure);
+		}
+
 		M5.Rtc.getDateTime(&xCurrentDateTime);
 		if(iLastSeconds!=xCurrentDateTime.time.seconds)
 		{
