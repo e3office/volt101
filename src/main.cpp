@@ -37,6 +37,7 @@
 #include "disp.h"
 #include "error.h"
 #include "helper.h"
+#include "task_adc.h"
 #include "task_network.h"
 
 // Definitions and configurations for SPI accesses microSD memory
@@ -77,7 +78,7 @@ void setup()
 		task_network::initializeTask();
 	}
 
-	//task_adc::initializeTask();
+	task_adc::initializeTask();
 }
 
 void loop()
