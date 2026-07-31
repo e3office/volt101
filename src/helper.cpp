@@ -5,7 +5,7 @@
 #include "error.h"
 #include "task_network.h"
 
-void update_statusWiFi(void)
+void helper_updateStatusWiFi(void)
 {
 	int32_t iRSSI;
 
@@ -22,7 +22,7 @@ void update_statusWiFi(void)
 	if(task_network::bFatal) error_rise(error::RiseType::WiFiConnectionFailure);
 }
 
-void update_statusPower(void)
+void helper_updateStatusPower(void)
 {
 	constexpr uint8_t ADDR_AXP192_INPOWSTAT=0U;
 	constexpr uint8_t VAL_AXP192_INPOWSTAT_ACIN_AVAIL=0x40U;

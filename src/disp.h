@@ -24,7 +24,7 @@ void disp_symbolPower(symbol::TwoState xSymbolTwoState);
 
 void disp_dateTime(const m5::rtc_datetime_t& xDateTime);
 void disp_currentResult(const struct task_adc::Result& xResult);
-void disp_initial(void);
+void disp_initialize(void);
 void disp_error(error::RiseType xRiseType);
 
 #endif // #ifndef DISP_H

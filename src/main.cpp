@@ -53,8 +53,8 @@ void setup()
 	xM5UnifiedConfig.internal_spk=false;
 	M5.begin(xM5UnifiedConfig);
 
-	delay(100);
-	disp_initial();
+	vTaskDelay(pdMS_TO_TICKS(100));
+	disp_initialize();
 
 	if(!M5.Rtc.isEnabled())
 	{
@@ -79,12 +79,14 @@ void setup()
 	}
 
 	task_adc::initializeTask();
+	vTaskDelay(pdMS_TO_TICKS(1000));
 }
 
 void loop()
 {
 	static int8_t iLastSeconds=-1;
 	m5::rtc_datetime_t xCurrentDateTime;
+
 	struct task_adc::Result xResult;
 
 	if(!error_handle())
@@ -97,15 +99,15 @@ void loop()
 		M5.Rtc.getDateTime(&xCurrentDateTime);
 		if(iLastSeconds!=xCurrentDateTime.time.seconds)
 		{
+			iLastSeconds=xCurrentDateTime.time.seconds;
+
 			task_adc::getResult(&xResult);
 			if(xResult.ucVoltRMS<common::ADC_VOLT_VALID_FROM) xResult.ucVoltRMS=0U;
 			disp_currentResult(xResult);
 
 			disp_dateTime(xCurrentDateTime);
-			update_statusWiFi();
-			update_statusPower();
-
-			iLastSeconds=xCurrentDateTime.time.seconds;
+			helper_updateStatusWiFi();
+			helper_updateStatusPower();
 		}
 	}
 	vTaskDelay(pdMS_TO_TICKS(100));
