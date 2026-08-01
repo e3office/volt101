@@ -1,7 +1,10 @@
 #ifndef HELPER_H
 #define HELPER_H
 
-void helper_updateStatusWiFi(void);
-void helper_updateStatusPower(void);
+namespace helper
+{
+	void updateStatusWiFi(void);
+	bool powerOK/*updateStatusPower*/(void);
+}
 
 #endif // #ifndef HELPER_H

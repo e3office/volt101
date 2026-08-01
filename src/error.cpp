@@ -4,36 +4,44 @@
 #include "disp.h"
 #include "error.h"
 
-static error::HandleState xErrorHandleState=error::HandleState::NotHandling;
-
-void error_rise(error::RiseType xRiseType)
+namespace error
 {
-	disp_error(xRiseType);
-	xErrorHandleState=error::HandleState::WaitingTouch;
-}
+	static HandleState xErrorHandleState=HandleState::NotHandling;
 
-bool error_handle(void)
-{
-	switch(xErrorHandleState)
+	void shutdownSafely(void)
 	{
-		case error::HandleState::WaitingTouch:
-		{
-			M5.update();
-			if(M5.Touch.getCount()) xErrorHandleState=error::HandleState::WaitingRelease;
-			return(true);
-		} break;
+		M5.Power.powerOff();
+	}
 
-		case error::HandleState::WaitingRelease:
-		{
-			M5.update();
-			if(!M5.Touch.getCount()) M5.Power.powerOff();
-			return(true);
-		} break;
+	void rise(error::RiseType xRiseType)
+	{
+		disp_error(xRiseType);
+		xErrorHandleState=error::HandleState::WaitingTouch;
+	}
 
-		case error::HandleState::NotHandling:
-		default:
+	bool handle(void)
+	{
+		switch(xErrorHandleState)
 		{
-			return(false);
-		} break;
+			case error::HandleState::WaitingTouch:
+			{
+				M5.update();
+				if(M5.Touch.getCount()) xErrorHandleState=error::HandleState::WaitingRelease;
+				return(true);
+			} break;
+
+			case error::HandleState::WaitingRelease:
+			{
+				M5.update();
+				if(!M5.Touch.getCount()) shutdownSafely();
+				return(true);
+			} break;
+
+			case error::HandleState::NotHandling:
+			default:
+			{
+				return(false);
+			} break;
+		}
 	}
 }

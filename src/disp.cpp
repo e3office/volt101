@@ -145,7 +145,7 @@ void disp_symbolPower(symbol::TwoState xSymbolTwoState)
 		puBitmaps[static_cast<size_t>(xSymbolTwoState)]);
 }
 
-void disp_dateTime(const m5::rtc_datetime_t& xDateTime)
+bool disp_dateTime(const m5::rtc_datetime_t& xDateTime)
 {
 	M5.Display.setTextSize(2);
 	M5.Display.setTextColor(CYAN,NAVY);
@@ -157,6 +157,7 @@ void disp_dateTime(const m5::rtc_datetime_t& xDateTime)
 		M5.Display.setCursor(32,78);
 		M5.Display.printf("%02d:%02d:%02d",xDateTime.time.hours,xDateTime.time.minutes,xDateTime.time.seconds);
 		disp_symbolClock(symbol::ThreeState::OK);
+		return(true);
 	}
 	else
 	{
@@ -165,6 +166,7 @@ void disp_dateTime(const m5::rtc_datetime_t& xDateTime)
 		M5.Display.setCursor(32,78);
 		M5.Display.print("--:--:--");
 		disp_symbolClock(symbol::ThreeState::Unknown);
+		return(false);
 	}
 }
 

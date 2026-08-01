@@ -22,7 +22,7 @@ void disp_symbolLogger(symbol::StopRec xSymbolStopRec);
 void disp_symbolWiFi(symbol::WiFi xSymbolWiFi);
 void disp_symbolPower(symbol::TwoState xSymbolTwoState);
 
-void disp_dateTime(const m5::rtc_datetime_t& xDateTime);
+bool disp_dateTime(const m5::rtc_datetime_t& xDateTime);
 void disp_currentResult(const struct task_adc::Result& xResult);
 void disp_initialize(void);
 void disp_error(error::RiseType xRiseType);

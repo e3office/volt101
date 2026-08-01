@@ -5,31 +5,48 @@
 #include "error.h"
 #include "task_network.h"
 
-void helper_updateStatusWiFi(void)
+namespace helper
 {
-	int32_t iRSSI;
-
-	if(WiFi.status()!=WL_CONNECTED) disp_symbolWiFi(symbol::WiFi::NG);
-	else
+	void updateStatusWiFi(void)
 	{
-		iRSSI=WiFi.RSSI();
-		if(iRSSI>=-55)      disp_symbolWiFi(symbol::WiFi::Good4);
-		else if(iRSSI>=-70) disp_symbolWiFi(symbol::WiFi::Good3);
-		else if(iRSSI>=-85) disp_symbolWiFi(symbol::WiFi::Good2);
-		else                disp_symbolWiFi(symbol::WiFi::Good1);
+		int32_t iRSSI;
+
+		if(WiFi.status()!=WL_CONNECTED) disp_symbolWiFi(symbol::WiFi::NG);
+		else
+		{
+			iRSSI=WiFi.RSSI();
+			if(iRSSI>=-55)      disp_symbolWiFi(symbol::WiFi::Good4);
+			else if(iRSSI>=-70) disp_symbolWiFi(symbol::WiFi::Good3);
+			else if(iRSSI>=-85) disp_symbolWiFi(symbol::WiFi::Good2);
+			else                disp_symbolWiFi(symbol::WiFi::Good1);
+		}
+
+		if(task_network::bFatal) error::rise(error::RiseType::WiFiConnectionFailure);
 	}
 
-	if(task_network::bFatal) error_rise(error::RiseType::WiFiConnectionFailure);
-}
-
-void helper_updateStatusPower(void)
-{
-	constexpr uint8_t ADDR_AXP192_INPOWSTAT=0U;
-	constexpr uint8_t VAL_AXP192_INPOWSTAT_ACIN_AVAIL=0x40U;
-
-	if(M5.Power.Axp192.readRegister8(ADDR_AXP192_INPOWSTAT) & VAL_AXP192_INPOWSTAT_ACIN_AVAIL)
+	bool powerOK/*updateStatusPower*/(void)
 	{
-		disp_symbolPower(symbol::TwoState::OK);
+		constexpr uint8_t ADDR_AXP192_INPOWSTAT=0U;
+		constexpr uint8_t VAL_AXP192_INPOWSTAT_ACIN_AVAIL=0x40U;
+
+		constexpr unsigned short SECONDS_TO_SHUTDOWN=600U;
+		constexpr int32_t BATTLEVEL_TO_SHUTDOWN=50;
+
+		static unsigned short usTimerSeconds=SECONDS_TO_SHUTDOWN;
+
+		if(M5.Power.Axp192.readRegister8(ADDR_AXP192_INPOWSTAT) & VAL_AXP192_INPOWSTAT_ACIN_AVAIL)
+		{
+			disp_symbolPower(symbol::TwoState::OK);
+			usTimerSeconds=SECONDS_TO_SHUTDOWN;
+			return(true);
+		}
+		else
+		{
+			disp_symbolPower(symbol::TwoState::NG);
+			if(M5.Power.getBatteryLevel()<=BATTLEVEL_TO_SHUTDOWN) usTimerSeconds=0U;
+			if(usTimerSeconds==0U) return(false);
+			usTimerSeconds--;
+			return(true);
+		}
 	}
-	else disp_symbolPower(symbol::TwoState::NG);
 }

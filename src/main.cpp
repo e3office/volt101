@@ -58,7 +58,7 @@ void setup()
 
 	if(!M5.Rtc.isEnabled())
 	{
-		error_rise(error::RiseType::RtcUnavailable);
+		error::rise(error::RiseType::RtcUnavailable);
 		return;
 	}
 	if(M5.Rtc.getVoltLow()) // RTC lost the valid date & time
@@ -68,7 +68,7 @@ void setup()
 
 	if(!SD.begin(SD_CS))
 	{
-		error_rise(error::RiseType::MemoryCardFailure);
+		error::rise(error::RiseType::MemoryCardFailure);
 		return;
 	}
 	disp_symbolMemory(symbol::TwoState::OK);
@@ -89,12 +89,21 @@ void loop()
 
 	struct task_adc::Result xResult;
 
-	if(!error_handle())
+	static bool bLogging=false;
+	bool bIsDatetimeValid;
+	bool bIsPowerOK;
+
+	if(!error::handle())
 	{
 		if(task_network::bFatal)
 		{
-			error_rise(error::RiseType::WiFiConnectionFailure);
+			error::rise(error::RiseType::WiFiConnectionFailure);
 		}
+
+		/*if(task_logging::bFatal)
+		{
+			error::rise(error::RiseType::MemoryCardFailure);
+		}*/
 
 		M5.Rtc.getDateTime(&xCurrentDateTime);
 		if(iLastSeconds!=xCurrentDateTime.time.seconds)
@@ -105,9 +114,24 @@ void loop()
 			if(xResult.ucVoltRMS<common::ADC_VOLT_VALID_FROM) xResult.ucVoltRMS=0U;
 			disp_currentResult(xResult);
 
-			disp_dateTime(xCurrentDateTime);
-			helper_updateStatusWiFi();
-			helper_updateStatusPower();
+			helper::updateStatusWiFi();
+			bIsPowerOK=helper::powerOK();
+			bIsDatetimeValid=disp_dateTime(xCurrentDateTime);
+
+			if(bIsPowerOK)
+			{
+				if(bIsDatetimeValid)
+				{
+					if(!bLogging)
+					{
+						bLogging=true;
+						disp_symbolLogger(symbol::StopRec::Rec);
+					}
+
+					// todo: etc. for logging
+				}
+			}
+			else error::shutdownSafely();
 		}
 	}
 	vTaskDelay(pdMS_TO_TICKS(100));

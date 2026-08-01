@@ -18,9 +18,11 @@ namespace error
 		WaitingTouch,
 		WaitingRelease
 	};
-}
 
-void error_rise(error::RiseType xRiseType);
-bool error_handle(void);
+	void shutdownSafely(void);
+
+	void rise(error::RiseType xRiseType);
+	bool handle(void);
+}
 
 #endif // #ifndef ERROR_H
