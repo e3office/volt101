@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <M5Unified.h>
 #include <WiFi.h>
 
 #include "disp.h"
@@ -33,8 +34,15 @@ namespace helper
 		constexpr int32_t BATTLEVEL_TO_SHUTDOWN=50;
 
 		static unsigned short usTimerSeconds=SECONDS_TO_SHUTDOWN;
+		static unsigned char ucPower=0U;
 
+		ucPower<<=1;
 		if(M5.Power.Axp192.readRegister8(ADDR_AXP192_INPOWSTAT) & VAL_AXP192_INPOWSTAT_ACIN_AVAIL)
+		{
+			ucPower|=0x01U;
+		}
+
+		if(ucPower)
 		{
 			disp_symbolPower(symbol::TwoState::OK);
 			usTimerSeconds=SECONDS_TO_SHUTDOWN;
