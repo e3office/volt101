@@ -2,6 +2,7 @@
 #include <M5Unified.h>
 #include <WiFi.h>
 
+#include "common.h"
 #include "disp.h"
 #include "error.h"
 #include "task_network.h"
@@ -30,10 +31,7 @@ namespace helper
 		constexpr uint8_t ADDR_AXP192_INPOWSTAT=0U;
 		constexpr uint8_t VAL_AXP192_INPOWSTAT_ACIN_AVAIL=0x40U;
 
-		constexpr unsigned short SECONDS_TO_SHUTDOWN=600U;
-		constexpr int32_t BATTLEVEL_TO_SHUTDOWN=50;
-
-		static unsigned short usTimerSeconds=SECONDS_TO_SHUTDOWN;
+		static unsigned short usTimerSeconds=common::SECONDS_TO_SHUTDOWN;
 		static unsigned char ucPower=0U;
 
 		ucPower<<=1;
@@ -45,13 +43,13 @@ namespace helper
 		if(ucPower)
 		{
 			disp_symbolPower(symbol::TwoState::OK);
-			usTimerSeconds=SECONDS_TO_SHUTDOWN;
+			usTimerSeconds=common::SECONDS_TO_SHUTDOWN;
 			return(true);
 		}
 		else
 		{
 			disp_symbolPower(symbol::TwoState::NG);
-			if(M5.Power.getBatteryLevel()<=BATTLEVEL_TO_SHUTDOWN) usTimerSeconds=0U;
+			if(M5.Power.getBatteryLevel()<=common::BATTLEVEL_TO_SHUTDOWN) usTimerSeconds=0U;
 			if(usTimerSeconds==0U) return(false);
 			usTimerSeconds--;
 			return(true);

@@ -18,6 +18,9 @@ namespace common
 	static constexpr float NORMAL_ADC_OFFSET_MAX=NORMAL_VDD_MILLIVOLT*1.1F*0.6F;
 
 	static constexpr unsigned char ADC_VOLT_VALID_FROM=10U;
+
+	static constexpr unsigned short SECONDS_TO_SHUTDOWN=600U;
+	static constexpr int32_t BATTLEVEL_TO_SHUTDOWN=50;
 }
 
 #endif // #COMMON_H DISP_H
