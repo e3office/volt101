@@ -38,6 +38,7 @@
 #include "error.h"
 #include "helper.h"
 #include "task_adc.h"
+#include "task_logging.h"
 #include "task_network.h"
 
 // Definitions and configurations for SPI accesses microSD memory
@@ -78,6 +79,7 @@ void setup()
 		task_network::initializeTask();
 	}
 
+	task_logging::initializeTask();
 	task_adc::initializeTask();
 	vTaskDelay(pdMS_TO_TICKS(1000));
 }
@@ -100,10 +102,10 @@ void loop()
 			error::rise(error::RiseType::WiFiConnectionFailure);
 		}
 
-		/*if(task_logging::bFatal)
+		if(task_logging::bFatal)
 		{
 			error::rise(error::RiseType::MemoryCardFailure);
-		}*/
+		}
 
 		M5.Rtc.getDateTime(&xCurrentDateTime);
 		if(iLastSeconds!=xCurrentDateTime.time.seconds)
@@ -127,8 +129,7 @@ void loop()
 						bLogging=true;
 						disp_symbolLogger(symbol::StopRec::Rec);
 					}
-
-					// todo: etc. for logging
+					task_logging::pushResult(xResult,xCurrentDateTime);
 				}
 			}
 			else error::shutdownSafely();

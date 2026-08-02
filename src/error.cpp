@@ -3,6 +3,7 @@
 
 #include "disp.h"
 #include "error.h"
+//#include "task_logging.h"
 
 namespace error
 {
@@ -10,7 +11,18 @@ namespace error
 
 	void shutdownSafely(void)
 	{
+		/*
+		constexpr unsigned short SUBSECONDS_TO_SHUTDOWN_FORCE=300U; // 300*0.1s=30s
+		unsigned short usTimerSubseconds;
+
+		for(usTimerSubseconds=SUBSECONDS_TO_SHUTDOWN_FORCE;usTimerSubseconds && task_logging::bBusy;usTimerSubseconds--)
+		{
+			vTaskDelay(pdMS_TO_TICKS(100));
+		}
+		*/
 		M5.Power.powerOff();
+
+		for(;;) vTaskDelay(pdMS_TO_TICKS(1000));
 	}
 
 	void rise(error::RiseType xRiseType)

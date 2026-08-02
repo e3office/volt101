@@ -36,6 +36,8 @@ namespace task_network
 
 	static StateSyncSNTP xStateSyncSNTP=StateSyncSNTP::NotYet;
 
+	static TaskHandle_t xTaskHandle=nullptr;
+
 	static void vSubTask_SNTP(void)
 	{
 		static constexpr unsigned POLLING_INTERVAL_MS=50U;
@@ -144,6 +146,9 @@ namespace task_network
 		WiFi.begin(xAppConf.cWifiSsid,xAppConf.cWifiPass);
 		vTaskDelay(pdMS_TO_TICKS(100));
 
-		xTaskCreatePinnedToCore(vTaskMain,"Task_Network",4096,NULL,1,NULL,0);
+		if(xTaskHandle==nullptr)
+		{
+			xTaskCreatePinnedToCore(vTaskMain,"Task_Network",4096,NULL,1,&xTaskHandle,0);
+		}
 	}
 }

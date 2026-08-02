@@ -106,7 +106,7 @@ void disp_symbolVolt(symbol::ThreeState xSymbolThreeState)
 void disp_symbolLogger(symbol::StopRec xSymbolStopRec)
 {
 	static constexpr int32_t SYMBOL_LOGGER_X=192;
-	static constexpr int32_t SYMBOL_LOGGER_Y=0;
+	static constexpr int32_t SYMBOL_LOGGER_Y=1;
 	static const uint16_t* const puBitmaps[]={uBitmap_LoggerStop,uBitmap_LoggerRec};
 
 	M5.Display.pushImage(

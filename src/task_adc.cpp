@@ -11,7 +11,8 @@ namespace task_adc
 	static constexpr float SCALE_FACTOR=100.0F/(208.333F/2.0F/F_SQRT2);
 
 	static hw_timer_t *pxHardwareTimer;
-	static TaskHandle_t xTaskHandle=NULL;
+
+	static TaskHandle_t xTaskHandle=nullptr;
 
 	struct ResultIntermed
 	{
@@ -100,7 +101,10 @@ namespace task_adc
 		constexpr uint64_t ALARM_INTR_AT=(uint64_t)(TIMER_BASE/ALARM_CYCLE);
 		constexpr bool ALARM_AUTORELOAD=true;
 
-		xTaskCreatePinnedToCore(vTaskMain,"Task_ADC",2048,NULL,21,&xTaskHandle,0);
+		if(xTaskHandle==nullptr)
+		{
+			xTaskCreatePinnedToCore(vTaskMain,"Task_ADC",2048,NULL,21,&xTaskHandle,0);
+		}
 
 		pxHardwareTimer=timerBegin(TIMER_NUM,TIMER_DIV,TIMER_COUNTUP);
 		timerAttachInterrupt(pxHardwareTimer,timerCallbackFunc,TIMER_INTR_BYPOSEDGE);
