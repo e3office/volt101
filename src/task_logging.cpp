@@ -43,7 +43,7 @@ namespace task_logging
 		File xFile;
 		uint32_t ulPage=0UL;
 		unsigned short usIndex=0U;
-		m5::rtc_datetime_t xLastDateTime{};
+		m5::rtc_datetime_t xLastDateTime;
 		char acFileName[]="/YYMMDD.dat";
 
 		for(;;)
@@ -59,6 +59,7 @@ namespace task_logging
 					continue;
 				}
 
+				xLastDateTime=common::DATETIME_DUMMY;
 				for(usIndex=0U;usIndex<SIZE_LOGBUFFER;usIndex++)
 				{
 					if(xLastDateTime.date.year !=axLogBuffer[ulPage][usIndex].xDateTime.date.year ||
