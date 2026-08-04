@@ -32,6 +32,9 @@
 #include <M5Unified.h>
 #include <SD.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 #include "appconf.h"
 #include "common.h"
 #include "disp.h"
@@ -67,7 +70,7 @@ void setup()
 		M5.Rtc.setDateTime(common::DATETIME_DUMMY);
 	}
 
-	if(!SD.begin(SD_CS))
+	if(!SD.begin(SD_CS) || (common::xMutexMemCard=xSemaphoreCreateMutex())==nullptr)
 	{
 		error::rise(error::RiseType::MemoryCardFailure);
 		return;

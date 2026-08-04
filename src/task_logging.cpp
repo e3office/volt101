@@ -39,6 +39,8 @@ namespace task_logging
 	static void vTaskMain(void *pvParameters)
 	{
 		uint32_t ulPage=0UL;
+		unsigned short usIndex=0U;
+		m5::rtc_datetime_t xLastDateTime{};
 
 		for(;;)
 		{

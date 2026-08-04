@@ -3,6 +3,9 @@
 
 #include <M5Unified.h>
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 namespace common
 {
 	extern const m5::rtc_datetime_t DATETIME_DUMMY;
@@ -21,6 +24,8 @@ namespace common
 
 	static constexpr unsigned short SECONDS_TO_SHUTDOWN=600U;
 	static constexpr int32_t BATTLEVEL_TO_SHUTDOWN=50;
+
+	extern SemaphoreHandle_t xMutexMemCard;
 }
 
 #endif // #COMMON_H DISP_H
