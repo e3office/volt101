@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <M5Unified.h>
+#include <SD.h>
 
+#include "common.h"
 #include "task_adc.h"
 
 namespace task_logging
@@ -38,18 +40,60 @@ namespace task_logging
 
 	static void vTaskMain(void *pvParameters)
 	{
+		File xFile;
 		uint32_t ulPage=0UL;
 		unsigned short usIndex=0U;
 		m5::rtc_datetime_t xLastDateTime{};
+		char acFileName[]="/YYMMDD.dat";
 
 		for(;;)
 		{
 			if(xTaskNotifyWait(0UL,0xffffffffUL,&ulPage,portMAX_DELAY)==pdPASS)
 			{
 				bBusy=true;
+				if(common::xMutexMemCard==nullptr ||
+				   xSemaphoreTake(common::xMutexMemCard,portMAX_DELAY)!=pdTRUE)
+				{
+					bFatal=true;
+					bBusy=false;
+					continue;
+				}
 
-				// ...
+				for(usIndex=0U;usIndex<SIZE_LOGBUFFER;usIndex++)
+				{
+					if(xLastDateTime.date.year !=axLogBuffer[ulPage][usIndex].xDateTime.date.year ||
+					   xLastDateTime.date.month!=axLogBuffer[ulPage][usIndex].xDateTime.date.month ||
+					   xLastDateTime.date.date !=axLogBuffer[ulPage][usIndex].xDateTime.date.date)
+					{
+						xLastDateTime=axLogBuffer[ulPage][usIndex].xDateTime;
 
+						acFileName[1]='0'+axLogBuffer[ulPage][usIndex].xDateTime.date.year%100/10;
+						acFileName[2]='0'+axLogBuffer[ulPage][usIndex].xDateTime.date.year%10;
+						acFileName[3]='0'+axLogBuffer[ulPage][usIndex].xDateTime.date.month%100/10;
+						acFileName[4]='0'+axLogBuffer[ulPage][usIndex].xDateTime.date.month%10;
+						acFileName[5]='0'+axLogBuffer[ulPage][usIndex].xDateTime.date.date%100/10;
+						acFileName[6]='0'+axLogBuffer[ulPage][usIndex].xDateTime.date.date%10;
+
+						if(xFile) xFile.close();
+						if(!(xFile=SD.open(acFileName,FILE_APPEND)))
+						{
+							bFatal=true;
+							break;
+						}
+					}
+					if(xFile.printf("%d,%d,%d,%u\r\n",
+						axLogBuffer[ulPage][usIndex].xDateTime.time.hours,
+						axLogBuffer[ulPage][usIndex].xDateTime.time.minutes,
+						axLogBuffer[ulPage][usIndex].xDateTime.time.seconds,
+						axLogBuffer[ulPage][usIndex].ucVoltRMS)<=0)
+					{
+						bFatal=true;
+						break;
+					}
+				}
+
+				if(xFile) xFile.close();
+				xSemaphoreGive(common::xMutexMemCard);
 				bBusy=false;
 			}
 		}
