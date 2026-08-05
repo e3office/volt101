@@ -104,7 +104,14 @@ namespace task_logging
 	{
 		if(xTaskHandle==nullptr)
 		{
-			xTaskCreatePinnedToCore(vTaskMain,"Task_Logging",4096,NULL,2,&xTaskHandle,1);
+			xTaskCreatePinnedToCore(
+				vTaskMain,
+				"Task_Logging",
+				common::TASKCONF_LOGGING.ulStackSize,
+				NULL,
+				common::TASKCONF_LOGGING.uxPriority,
+				&xTaskHandle,
+				common::TASKCONF_LOGGING.xCoreID);
 		}
 	}
 }

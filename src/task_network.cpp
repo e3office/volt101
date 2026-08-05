@@ -148,7 +148,14 @@ namespace task_network
 
 		if(xTaskHandle==nullptr)
 		{
-			xTaskCreatePinnedToCore(vTaskMain,"Task_Network",4096,NULL,1,&xTaskHandle,0);
+			xTaskCreatePinnedToCore(
+				vTaskMain,
+				"Task_Network",
+				common::TASKCONF_NETWORK.ulStackSize,
+				NULL,
+				common::TASKCONF_NETWORK.uxPriority,
+				&xTaskHandle,
+				common::TASKCONF_NETWORK.xCoreID);
 		}
 	}
 }

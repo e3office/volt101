@@ -1,7 +1,7 @@
 /*
 	AC Voltage Logger system firmware version 1.01
 
-	2026.7 Enomoto Electronics Engineering
+	2026.8 Enomoto Electronics Engineering
 
 	Expected configurations:
 
@@ -25,7 +25,7 @@
 
 	Versions history:
 
-		2026.7.XX version 1.01
+		2026.8.XX version 1.01
 */
 
 #include <Arduino.h>

@@ -103,7 +103,14 @@ namespace task_adc
 
 		if(xTaskHandle==nullptr)
 		{
-			xTaskCreatePinnedToCore(vTaskMain,"Task_ADC",2048,NULL,21,&xTaskHandle,0);
+			xTaskCreatePinnedToCore(
+				vTaskMain,
+				"Task_ADC",
+				common::TASKCONF_ADC.ulStackSize,
+				NULL,
+				common::TASKCONF_ADC.uxPriority,
+				&xTaskHandle,
+				common::TASKCONF_ADC.xCoreID);
 		}
 
 		pxHardwareTimer=timerBegin(TIMER_NUM,TIMER_DIV,TIMER_COUNTUP);
