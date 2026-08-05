@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <math.h>
 
+#include <freertos/semphr.h>
+
 #include "common.h"
 #include "task_adc.h"
 

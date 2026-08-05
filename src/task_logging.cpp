@@ -2,6 +2,8 @@
 #include <M5Unified.h>
 #include <SD.h>
 
+#include <freertos/semphr.h>
+
 #include "common.h"
 #include "task_adc.h"
 

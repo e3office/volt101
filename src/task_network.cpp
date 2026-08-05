@@ -18,7 +18,7 @@
 
 #include "appconf.h"
 #include "common.h"
-//#include "task_ftp.h"
+#include "task_HTTPd.h"
 
 namespace task_network
 {
@@ -102,8 +102,8 @@ namespace task_network
 				// mDNS responder
 				MDNS.end();
 
-				// FTP server
-				//task_ftp::stopServer();
+				// HTTP server
+				task_HTTPd::disposeTask();
 
 				WiFi.disconnect();
 				vTaskDelay(pdMS_TO_TICKS(100));
@@ -124,8 +124,8 @@ namespace task_network
 				// mDNS responder
 				MDNS.begin(common::LOCAL_HOSTNAME);
 
-				// FTP server
-				//task_ftp::startServer();
+				// HTTP server
+				task_HTTPd::initializeTask();
 			}
 
 			xLastWiFiStatus=xCurrentWiFiStatus;

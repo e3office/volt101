@@ -3,7 +3,6 @@
 
 #include <M5Unified.h>
 
-#include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
 struct TaskConf
