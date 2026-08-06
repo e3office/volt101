@@ -22,9 +22,25 @@ namespace task_HTTPd
 		static constexpr unsigned long MILLIS_TIMEOUT=2000UL;
 		unsigned long ulMills_connected;
 
-		static constexpr char TAIL_HTTPREQ[]="\r\n\r\n";
-		static constexpr size_t LENGTH_TAIL_HTTPREQ=sizeof(TAIL_HTTPREQ)-1;
-		char cBufferRx[LENGTH_TAIL_HTTPREQ+1]={0};
+		static constexpr char HTTPREQ_PREFIX[]="GET /";
+		static constexpr size_t LENGTH_PREFIX=sizeof(HTTPREQ_PREFIX)-1;
+		char cBufferPrefix[LENGTH_PREFIX+1]={0};
+
+		static constexpr size_t LENGTH_LOCATION=12; // "/YYMMDD.dat "
+		char cBufferLocation[LENGTH_LOCATION+1]="/";
+		int iBufferLocationIndex=1;
+
+		static constexpr char HTTPREQ_SUFFIX[]="\r\n\r\n";
+		static constexpr size_t LENGTH_SUFFIX=sizeof(HTTPREQ_SUFFIX)-1;
+		char cBufferSuffix[LENGTH_SUFFIX+1]={0};
+
+		enum class ParseStat
+		{
+			WaitPrefix,
+			CaptureLoc,
+			WaitSuffix
+		};
+		ParseStat xParseStat=ParseStat::WaitPrefix;
 
 		xHttpServer.begin();
 
@@ -44,25 +60,63 @@ namespace task_HTTPd
 
 					if(xClient.available())
 					{
-						for(i=0;i<LENGTH_TAIL_HTTPREQ-1;i++)
+						switch(xParseStat)
 						{
-							cBufferRx[i]=cBufferRx[i+1];
-						}
-						cBufferRx[LENGTH_TAIL_HTTPREQ-1]=xClient.read();
+							case ParseStat::WaitPrefix:
+							{
+								for(i=0;i<LENGTH_PREFIX-1;i++)
+								{
+									cBufferPrefix[i]=cBufferPrefix[i+1];
+								}
+								cBufferPrefix[LENGTH_PREFIX-1]=xClient.read();
 
-						if(strcmp(cBufferRx,TAIL_HTTPREQ)==0)
-						{
-							xClient.println("HTTP/1.1 200 OK");
-							xClient.println("Content-Type: text/html");
-							xClient.println("Connection: close");
-							xClient.println();
-							xClient.println("<!DOCTYPE html><html><body><h1>It works!</h1></body></html>");
-							break;
+								if(strcmp(cBufferPrefix,HTTPREQ_PREFIX)==0)
+								{
+									xParseStat=ParseStat::CaptureLoc;
+								}
+							} break;
+
+							case ParseStat::CaptureLoc:
+							{
+								if(iBufferLocationIndex<LENGTH_LOCATION)
+								{
+									cBufferLocation[iBufferLocationIndex]=xClient.read();
+									if(cBufferLocation[iBufferLocationIndex]==' ')
+									{
+										cBufferLocation[iBufferLocationIndex]='\0';
+									}
+									iBufferLocationIndex++;
+								}
+								else
+								{
+									xParseStat=ParseStat::WaitSuffix;
+								}
+							} break;
+
+							case ParseStat::WaitSuffix:
+							{
+								for(i=0;i<LENGTH_SUFFIX-1;i++)
+								{
+									cBufferSuffix[i]=cBufferSuffix[i+1];
+								}
+								cBufferSuffix[LENGTH_SUFFIX-1]=xClient.read();
+
+								if(strcmp(cBufferSuffix,HTTPREQ_SUFFIX)==0)
+								{
+									xClient.println("HTTP/1.1 200 OK");
+									xClient.println("Content-Type: text/html");
+									xClient.println("Connection: close");
+									xClient.println();
+									xClient.println("<!DOCTYPE html><html><body><h1>It works!</h1></body></html>");
+									xClient.stop();
+								}
+							} break;
+
+							default: break;
 						}
 					}
 					else vTaskDelay(pdMS_TO_TICKS(1));
 				}
-				xClient.stop();
 			}
 			else vTaskDelay(pdMS_TO_TICKS(10));
 		}
