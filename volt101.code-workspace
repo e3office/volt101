@@ -17,7 +17,8 @@
 			"initializer_list": "cpp",
 			"*.tcc": "cpp",
 			"fstream": "cpp",
-			"chrono": "cpp"
+			"chrono": "cpp",
+			"typeinfo": "cpp"
 		}
 	}
 }

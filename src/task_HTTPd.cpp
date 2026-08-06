@@ -1,7 +1,9 @@
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <WiFi.h>
+#include <SD.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <freertos/semphr.h>
 
@@ -14,21 +16,44 @@ namespace task_HTTPd
 	constexpr uint16_t PORT_HTTP=80U;
 	static WiFiServer xHttpServer(PORT_HTTP);
 
+	static boolean isValidFilename(const char *pcFilename)
+	{
+		// YYMMDD.dat
+		if(strlen(pcFilename)==10 &&
+			isdigit(pcFilename[0]) &&
+			isdigit(pcFilename[1]) &&
+			isdigit(pcFilename[2]) &&
+			isdigit(pcFilename[3]) &&
+			isdigit(pcFilename[4]) &&
+			isdigit(pcFilename[5]) &&
+			pcFilename[6]=='.' &&
+			pcFilename[7]=='d' &&
+			pcFilename[8]=='a' &&
+			pcFilename[9]=='t') return(true);
+
+		else return(false);
+	}
+
 	enum class HttpResponse
 	{
+		Error400_badRequest,
 		Error404_notFound,
 		Error408_requestTimeOut,
-		Error503_serviceUnavailable
+		Error503_serviceUnavailable,
+		Error500_internalServerError
 	};
 
 	static const char *httpErrorString(HttpResponse xError)
 	{
 		switch(xError)
 		{
-			case HttpResponse::Error404_notFound:           return("Not Found");             break;
-			case HttpResponse::Error408_requestTimeOut:     return("Request Timeout");       break;
-			case HttpResponse::Error503_serviceUnavailable: return("Service Unavailable");   break;
-			default:                                        return("Internal Server Error"); break;
+			case HttpResponse::Error400_badRequest:            return("400 Bad Request");           break;
+			case HttpResponse::Error404_notFound:              return("404 Not Found");             break;
+			case HttpResponse::Error408_requestTimeOut:        return("408 Request Timeout");       break;
+			case HttpResponse::Error503_serviceUnavailable:    return("503 Service Unavailable");   break;
+
+			//case HttpResponse::Error500_internalServerError:
+			default:                                           return("500 Internal Server Error"); break;
 		}
 	}
 
@@ -43,6 +68,89 @@ namespace task_HTTPd
 
 	static void handleResponse(WiFiClient& xClient,const char *pcLocation)
 	{
+		constexpr uint32_t MUTEX_BLOCKTIME_MS=3000UL;
+
+		File xFile_rootDir;
+		File xFile_nextFile;
+
+		constexpr size_t LENGTH_BUFFER=64;
+		unsigned char aucBuffer[LENGTH_BUFFER];
+		int iBytesToRead;
+		int iBytesWasRead;
+
+		const char *pcFilename;
+
+		if(common::xMutexMemCard==nullptr ||
+		   xSemaphoreTake(common::xMutexMemCard,pdMS_TO_TICKS(MUTEX_BLOCKTIME_MS))!=pdTRUE)
+		{
+			sendErrorResponse(xClient,HttpResponse::Error503_serviceUnavailable);
+			return;
+		}
+
+		if(pcLocation[1])
+		{
+			if(!isValidFilename(&pcLocation[1]))
+			{
+				sendErrorResponse(xClient,HttpResponse::Error400_badRequest);
+			}
+			else if(!(xFile_nextFile=SD.open(pcLocation,FILE_READ)))
+			{
+				sendErrorResponse(xClient,HttpResponse::Error404_notFound);
+			}
+			else
+			{
+				xClient.println("HTTP/1.1 200 OK");
+				xClient.println("Content-Type: text/csv");
+				xClient.println("Connection: close");
+				xClient.println();
+
+				while(iBytesToRead=xFile_nextFile.available())
+				{
+					if(iBytesToRead>LENGTH_BUFFER) iBytesToRead=LENGTH_BUFFER;
+					iBytesWasRead=xFile_nextFile.read(aucBuffer,iBytesToRead);
+					if(iBytesWasRead<=0) break;
+					xClient.write(aucBuffer,iBytesWasRead);
+				}
+				xFile_nextFile.close();
+			}
+		}
+		else
+		{
+			if(!(xFile_rootDir=SD.open("/")))
+			{
+				sendErrorResponse(xClient,HttpResponse::Error500_internalServerError);
+			}
+			else
+			{
+				xClient.println("HTTP/1.1 200 OK");
+				xClient.println("Content-Type: text/html");
+				xClient.println("Connection: close");
+				xClient.println();
+				xClient.println("<!DOCTYPE html><html><head><style type=\"text/css\">");
+				xClient.println(".file-container {display:flex; flex-wrap:wrap; gap:15px; padding:10px;}");
+				xClient.println(".file-item {display:block; padding:12px 20px; background:#f0f0f0; text-decoration:none; color:#333; border-radius:5px;}");
+				xClient.println("</style></head><body><div class=\"file-container\">");
+
+				for(;;)
+				{
+					if(!(xFile_nextFile=xFile_rootDir.openNextFile())) break;
+					if(!xFile_nextFile.isDirectory())
+					{
+						pcFilename=xFile_nextFile.name();
+						if(isValidFilename(pcFilename))
+						{
+							xClient.printf("<a class=\"file-item\" href=\"/%1$s\">%1$s</a>\r\n",pcFilename);
+						}
+					}
+					xFile_nextFile.close();
+				}
+				xFile_rootDir.close();
+
+				xClient.println("</div></body></html>");
+			}
+		}
+
+		xSemaphoreGive(common::xMutexMemCard);
 	}
 
 	static void vTaskMain(void *pvParameters)
@@ -55,15 +163,15 @@ namespace task_HTTPd
 
 		static constexpr char HTTPREQ_PREFIX[]="GET /";
 		static constexpr size_t LENGTH_PREFIX=sizeof(HTTPREQ_PREFIX)-1;
-		char cBufferPrefix[LENGTH_PREFIX+1]={0};
+		char acBufferPrefix[LENGTH_PREFIX+1]={0};
 
 		static constexpr size_t LENGTH_LOCATION=12; // "/YYMMDD.dat "
-		char cBufferLocation[LENGTH_LOCATION+1]="/";
+		char acBufferLocation[LENGTH_LOCATION+1]="/";
 		int iBufferLocationIndex;
 
 		static constexpr char HTTPREQ_SUFFIX[]="\r\n\r\n";
 		static constexpr size_t LENGTH_SUFFIX=sizeof(HTTPREQ_SUFFIX)-1;
-		char cBufferSuffix[LENGTH_SUFFIX+1]={0};
+		char acBufferSuffix[LENGTH_SUFFIX+1]={0};
 
 		enum class ParseStat
 		{
@@ -99,11 +207,11 @@ namespace task_HTTPd
 							{
 								for(i=0;i<LENGTH_PREFIX-1;i++)
 								{
-									cBufferPrefix[i]=cBufferPrefix[i+1];
+									acBufferPrefix[i]=acBufferPrefix[i+1];
 								}
-								cBufferPrefix[LENGTH_PREFIX-1]=xClient.read();
+								acBufferPrefix[LENGTH_PREFIX-1]=xClient.read();
 
-								if(strcmp(cBufferPrefix,HTTPREQ_PREFIX)==0)
+								if(strcmp(acBufferPrefix,HTTPREQ_PREFIX)==0)
 								{
 									iBufferLocationIndex=1;
 									xParseStat=ParseStat::CaptureLoc;
@@ -114,10 +222,10 @@ namespace task_HTTPd
 							{
 								if(iBufferLocationIndex<LENGTH_LOCATION)
 								{
-									cBufferLocation[iBufferLocationIndex]=xClient.read();
-									if(cBufferLocation[iBufferLocationIndex]==' ')
+									acBufferLocation[iBufferLocationIndex]=xClient.read();
+									if(acBufferLocation[iBufferLocationIndex]==' ')
 									{
-										cBufferLocation[iBufferLocationIndex]='\0';
+										acBufferLocation[iBufferLocationIndex]='\0';
 									}
 									iBufferLocationIndex++;
 								}
@@ -131,19 +239,19 @@ namespace task_HTTPd
 							{
 								for(i=0;i<LENGTH_SUFFIX-1;i++)
 								{
-									cBufferSuffix[i]=cBufferSuffix[i+1];
+									acBufferSuffix[i]=acBufferSuffix[i+1];
 								}
-								cBufferSuffix[LENGTH_SUFFIX-1]=xClient.read();
+								acBufferSuffix[LENGTH_SUFFIX-1]=xClient.read();
 
-								if(strcmp(cBufferSuffix,HTTPREQ_SUFFIX)==0)
+								if(strcmp(acBufferSuffix,HTTPREQ_SUFFIX)==0)
 								{
-									handleResponse(xClient,cBufferLocation);
+									handleResponse(xClient,acBufferLocation);
 									/*xClient.println("HTTP/1.1 200 OK");
 									xClient.println("Content-Type: text/html");
 									xClient.println("Connection: close");
 									xClient.println();
-									xClient.printf("<!DOCTYPE html><html><body><h1>It works!</h1>You requested '%s' (%d).\r\n",cBufferLocation,iBufferLocationIndex);
-									for(i=0;i<=LENGTH_LOCATION;i++) xClient.printf("(%02x)",cBufferLocation[i]);
+									xClient.printf("<!DOCTYPE html><html><body><h1>It works!</h1>You requested '%s' (%d).\r\n",acBufferLocation,iBufferLocationIndex);
+									for(i=0;i<=LENGTH_LOCATION;i++) xClient.printf("(%02x)",acBufferLocation[i]);
 									xClient.println("</body></html>");*/
 									xClient.stop();
 								}
