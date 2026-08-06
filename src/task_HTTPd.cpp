@@ -14,6 +14,37 @@ namespace task_HTTPd
 	constexpr uint16_t PORT_HTTP=80U;
 	static WiFiServer xHttpServer(PORT_HTTP);
 
+	enum class HttpResponse
+	{
+		Error404_notFound,
+		Error408_requestTimeOut,
+		Error503_serviceUnavailable
+	};
+
+	static const char *httpErrorString(HttpResponse xError)
+	{
+		switch(xError)
+		{
+			case HttpResponse::Error404_notFound:           return("Not Found");             break;
+			case HttpResponse::Error408_requestTimeOut:     return("Request Timeout");       break;
+			case HttpResponse::Error503_serviceUnavailable: return("Service Unavailable");   break;
+			default:                                        return("Internal Server Error"); break;
+		}
+	}
+
+	static void sendErrorResponse(WiFiClient& xClient,HttpResponse xError)
+	{
+		xClient.printf("HTTP/1.1 %s\r\n",httpErrorString(xError));
+		xClient.println("Content-Type: text/plain");
+		xClient.println("Connection: close");
+		xClient.println();
+		xClient.println(httpErrorString(xError));
+	}
+
+	static void handleResponse(WiFiClient& xClient,const char *pcLocation)
+	{
+	}
+
 	static void vTaskMain(void *pvParameters)
 	{
 		int i;
@@ -28,7 +59,7 @@ namespace task_HTTPd
 
 		static constexpr size_t LENGTH_LOCATION=12; // "/YYMMDD.dat "
 		char cBufferLocation[LENGTH_LOCATION+1]="/";
-		int iBufferLocationIndex=1;
+		int iBufferLocationIndex;
 
 		static constexpr char HTTPREQ_SUFFIX[]="\r\n\r\n";
 		static constexpr size_t LENGTH_SUFFIX=sizeof(HTTPREQ_SUFFIX)-1;
@@ -50,11 +81,13 @@ namespace task_HTTPd
 			if(xClient)
 			{
 				ulMills_connected=millis();
+				xParseStat=ParseStat::WaitPrefix;
+
 				while(xClient.connected())
 				{
 					if(millis()-ulMills_connected>=MILLIS_TIMEOUT)
 					{
-						xClient.println("HTTP/1.1 408 Request Time-out");
+						sendErrorResponse(xClient,HttpResponse::Error408_requestTimeOut);
 						break;
 					}
 
@@ -72,6 +105,7 @@ namespace task_HTTPd
 
 								if(strcmp(cBufferPrefix,HTTPREQ_PREFIX)==0)
 								{
+									iBufferLocationIndex=1;
 									xParseStat=ParseStat::CaptureLoc;
 								}
 							} break;
@@ -103,11 +137,14 @@ namespace task_HTTPd
 
 								if(strcmp(cBufferSuffix,HTTPREQ_SUFFIX)==0)
 								{
-									xClient.println("HTTP/1.1 200 OK");
+									handleResponse(xClient,cBufferLocation);
+									/*xClient.println("HTTP/1.1 200 OK");
 									xClient.println("Content-Type: text/html");
 									xClient.println("Connection: close");
 									xClient.println();
-									xClient.println("<!DOCTYPE html><html><body><h1>It works!</h1></body></html>");
+									xClient.printf("<!DOCTYPE html><html><body><h1>It works!</h1>You requested '%s' (%d).\r\n",cBufferLocation,iBufferLocationIndex);
+									for(i=0;i<=LENGTH_LOCATION;i++) xClient.printf("(%02x)",cBufferLocation[i]);
+									xClient.println("</body></html>");*/
 									xClient.stop();
 								}
 							} break;
