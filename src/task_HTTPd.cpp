@@ -90,9 +90,12 @@ namespace task_HTTPd
 				while(iBytesToRead=xFile_nextFile.available())
 				{
 					if(iBytesToRead>LENGTH_BUFFER) iBytesToRead=LENGTH_BUFFER;
+
 					iBytesWasRead=xFile_nextFile.read(aucBuffer,iBytesToRead);
 					if(iBytesWasRead<=0) break;
+
 					xClient.write(aucBuffer,iBytesWasRead);
+					vTaskDelay(pdMS_TO_TICKS(1));
 				}
 				xFile_nextFile.close();
 			}
