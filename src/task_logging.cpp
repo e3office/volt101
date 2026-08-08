@@ -1,10 +1,12 @@
 #include <Arduino.h>
 #include <M5Unified.h>
 #include <SD.h>
+#include <string.h>
 
 #include <freertos/semphr.h>
 
 #include "common.h"
+#include "helper.h"
 #include "task_adc.h"
 
 namespace task_logging
@@ -42,6 +44,49 @@ namespace task_logging
 		}
 	}
 
+	static void doHousekeeping(void)
+	{
+		File xFile_rootDir;
+		File xFile_nextFile;
+
+		char acFilename_oldest[]="/999999.dat";
+		const char *pcFilename_current;
+
+		bool bFound=false;
+
+		if((SD.totalBytes()-SD.usedBytes())>=HOUSEKEEPING_BYTES ||
+		   !(xFile_rootDir=SD.open("/")))
+		{
+			return;
+		}
+
+		for(;;)
+		{
+			if(!(xFile_nextFile=xFile_rootDir.openNextFile())) break;
+			if(!xFile_nextFile.isDirectory())
+			{
+				pcFilename_current=xFile_nextFile.name();
+				if(helper::isValidFilename(pcFilename_current))
+				{
+					if(strcmp(pcFilename_current,&acFilename_oldest[1])<0)
+					{
+						acFilename_oldest[1]=pcFilename_current[0];
+						acFilename_oldest[2]=pcFilename_current[1];
+						acFilename_oldest[3]=pcFilename_current[2];
+						acFilename_oldest[4]=pcFilename_current[3];
+						acFilename_oldest[5]=pcFilename_current[4];
+						acFilename_oldest[6]=pcFilename_current[5];
+						bFound=true;
+					}
+				}
+			}
+			xFile_nextFile.close();
+		}
+		xFile_rootDir.close();
+
+		if(bFound) SD.remove(acFilename_oldest);
+	}
+
 	static void vTaskMain(void *pvParameters)
 	{
 		File xFile;
@@ -62,6 +107,8 @@ namespace task_logging
 					bBusy=false;
 					continue;
 				}
+
+				doHousekeeping();
 
 				xLastDateTime=common::DATETIME_DUMMY;
 				for(usIndex=0U;usIndex<SIZE_LOGBUFFER;usIndex++)
