@@ -9,6 +9,8 @@
 
 namespace task_logging
 {
+	constexpr unsigned long long HOUSEKEEPING_BYTES=32ULL*1024ULL*1024ULL;
+
 	volatile bool bBusy=false;
 	volatile bool bFatal=false;
 
