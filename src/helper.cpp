@@ -55,4 +55,22 @@ namespace helper
 			return(true);
 		}
 	}
+
+	bool isValidFilename(const char *pcFilename)
+	{
+		// YYMMDD.dat
+		if(strlen(pcFilename)==10 &&
+			isdigit(pcFilename[0]) &&
+			isdigit(pcFilename[1]) &&
+			isdigit(pcFilename[2]) &&
+			isdigit(pcFilename[3]) &&
+			isdigit(pcFilename[4]) &&
+			isdigit(pcFilename[5]) &&
+			pcFilename[6]=='.' &&
+			pcFilename[7]=='d' &&
+			pcFilename[8]=='a' &&
+			pcFilename[9]=='t') return(true);
+
+		else return(false);
+	}
 }
